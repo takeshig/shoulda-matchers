@@ -182,19 +182,47 @@ module Shoulda # :nodoc:
         end
 
         def normalize_blocks
-          @email_subject = @context.instance_eval(&@email_subject_block) if @email_subject_block
-          @sender = @context.instance_eval(&@sender_block) if @sender_block
-          @reply_to = @context.instance_eval(&@reply_to_block) if @reply_to_block
-          @body = @context.instance_eval(&@body_block) if @body_block
-          @recipient = @context.instance_eval(&@recipient_block) if @recipient_block
-          @cc = @context.instance_eval(&@cc_block) if @cc_block
-          @cc_recipients = @context.instance_eval(&@cc_recipients_block) if @cc_recipients_block
-          @bcc = @context.instance_eval(&@bcc_block) if @bcc_block
-          @bcc_recipients = @context.instance_eval(&@bcc_recipients_block) if @bcc_recipients_block
+          if @email_subject_block
+            @email_subject = @context.instance_eval(&@email_subject_block)
+          end
+
+          if @sender_block
+            @sender = @context.instance_eval(&@sender_block)
+          end
+
+          if @reply_to_block
+            @reply_to = @context.instance_eval(&@reply_to_block)
+          end
+
+          if @body_block
+            @body = @context.instance_eval(&@body_block)
+          end
+
+          if @recipient_block
+            @recipient = @context.instance_eval(&@recipient_block)
+          end
+
+          if @cc_block
+            @cc = @context.instance_eval(&@cc_block)
+          end
+
+          if @cc_recipients_block
+            @cc_recipients = @context.instance_eval(&@cc_recipients_block)
+          end
+
+          if @bcc_block
+            @bcc = @context.instance_eval(&@bcc_block)
+          end
+
+          if @bcc_recipients_block
+            @bcc_recipients = @context.instance_eval(&@bcc_recipients_block)
+          end
 
           if @parts
             @parts.each_with_index do |part, i|
-              part[1] = @context.instance_eval(&@parts_blocks[i]) if @parts_blocks[i]
+              if @parts_blocks[i]
+                part[1] = @context.instance_eval(&@parts_blocks[i])
+              end
             end
           end
         end
@@ -245,10 +273,12 @@ module Shoulda # :nodoc:
 
         def part_match(mail, content_type, a_regexp_or_string)
           matching = mail.parts.select {|p| p.content_type =~ content_type}
-          return false if matching.empty?
-
-          matching.all? do |part|
-            regexp_or_string_match(part.body, a_regexp_or_string)
+          if matching.empty?
+            false
+          else
+            matching.all? do |part|
+              regexp_or_string_match(part.body, a_regexp_or_string)
+            end
           end
         end
       end
