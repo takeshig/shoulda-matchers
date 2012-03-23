@@ -102,7 +102,8 @@ module Shoulda # :nodoc:
         def matches?(subject)
           normalize_blocks
           ::ActionMailer::Base.deliveries.all? do |mail|
-            mail_matches?(mail)
+            @mail = mail
+            everything_matches?
           end
         end
 
@@ -137,19 +138,21 @@ module Shoulda # :nodoc:
 
         def expectation
           expectation = "sent email"
-          expectation << " with subject #{@email_subject.inspect}" if @subject_failed
-          expectation << " with body #{@body.inspect}" if @body_failed
-          @parts.each do |_, body, content_type|
-            expectation << " with a #{content_type} part containing #{body}"
-          end if @parts && @parts_failed
-          expectation << " from #{@sender.inspect}" if @sender_failed
-          expectation << " reply to #{@reply_to.inspect}" if @reply_to_failed
-          expectation << " to #{@recipient.inspect}" if @recipient_failed
-          expectation << " cc #{@cc.inspect}" if @cc_failed
-          expectation << " with cc #{@cc_recipients.inspect}" if @cc_recipients_failed
-          expectation << " bcc #{@bcc.inspect}" if @bcc_failed
-          expectation << " with bcc #{@bcc_recipients.inspect}" if @bcc_recipients_failed
-          expectation << " #{'not ' if !@multipart}being multipart" if @multipart_failed
+          expectation << " with subject #{@email_subject.inspect}" unless subject_matches?
+          expectation << " with body #{@body.inspect}" unless body_matches?
+          unless parts_matches?
+            @parts.each do |_, body, content_type|
+              expectation << " with a #{content_type} part containing #{body}"
+            end
+          end
+          expectation << " from #{@sender.inspect}" unless sender_matches?
+          expectation << " reply to #{@reply_to.inspect}" unless reply_to_matches?
+          expectation << " to #{@recipient.inspect}" unless recipient_matches?
+          expectation << " cc #{@cc.inspect}" unless cc_matches?
+          expectation << " with cc #{@cc_recipients.inspect}" unless cc_recipients_matches?
+          expectation << " bcc #{@bcc.inspect}" unless bcc_matches?
+          expectation << " with bcc #{@bcc_recipients.inspect}" unless bcc_recipients_matches?
+          expectation << " #{'not ' if !@multipart}being multipart" unless multipart_matches?
           expectation << "\nDeliveries:\n#{inspect_deliveries}"
         end
 
@@ -159,27 +162,100 @@ module Shoulda # :nodoc:
           end.join("\n")
         end
 
-        def mail_matches?(mail)
-          @subject_failed = !regexp_or_string_match(mail.subject, @email_subject) if @email_subject
-          @parts_failed = !parts_match(mail, @parts) if @parts
-          @body_failed = !body_match(mail, @body) if @body
-          @sender_failed = !regexp_or_string_match_in_array(mail.from, @sender) if @sender
-          @reply_to_failed = !regexp_or_string_match_in_array(mail.reply_to, @reply_to) if @reply_to
-          @recipient_failed = !regexp_or_string_match_in_array(mail.to, @recipient) if @recipient
-          @cc_failed = !regexp_or_string_match_in_array(mail.cc, @cc) if @cc
-          @cc_recipients_failed = !match_array_in_array(mail.cc, @cc_recipients) if @cc_recipients
-          @bcc_failed = !regexp_or_string_match_in_array(mail.bcc, @bcc) if @bcc
-          @bcc_recipients_failed = !match_array_in_array(mail.bcc, @bcc_recipients) if @bcc_recipients
-          @multipart_failed = (mail.multipart? != @multipart) if defined?(@multipart)
-
-          ! anything_failed?
+        def everything_matches?
+          subject_matches? && body_matches? && sender_matches? && reply_to_matches? &&
+            recipient_matches? && cc_matches? && cc_recipients_matches? && bcc_matches? &&
+            bcc_recipients_matches? && parts_matches? && multipart_matches?
         end
 
-        def anything_failed?
-          @subject_failed || @body_failed || @sender_failed || @reply_to_failed ||
-            @recipient_failed || @cc_failed || @cc_recipients_failed || @bcc_failed ||
-            @bcc_recipients_failed || @parts_failed || @multipart_failed
+        def subject_matches?
+          if @email_subject
+            regexp_or_string_match(@mail.subject, @email_subject)
+          else
+            true
+          end
         end
+
+        def parts_matches?
+          if @parts
+            parts_match(@mail, @parts)
+          else
+            true
+          end
+        end
+
+        def body_matches?
+          if @body
+            body_match(@mail, @body)
+          else
+            true
+          end
+        end
+
+        def sender_matches?
+          if @sender
+            regexp_or_string_match_in_array(@mail.from, @sender)
+          else
+            true
+          end
+        end
+
+         def reply_to_matches?
+           if @reply_to
+             regexp_or_string_match_in_array(@mail.reply_to, @reply_to)
+           else
+             true
+           end
+         end
+
+
+         def recipient_matches?
+           if @recipient
+             regexp_or_string_match_in_array(@mail.to, @recipient)
+           else
+             true
+           end
+         end
+
+         def cc_matches?
+           if @cc
+             regexp_or_string_match_in_array(@mail.cc, @cc)
+           else
+             true
+           end
+         end
+
+         def cc_recipients_matches?
+           if @cc_recipients
+             match_array_in_array(@mail.cc, @cc_recipients)
+           else
+             true
+           end
+         end
+
+         def bcc_matches?
+           if @bcc
+             regexp_or_string_match_in_array(@mail.bcc, @bcc)
+           else
+             true
+           end
+         end
+
+         def bcc_recipients_matches?
+           if @bcc_recipients
+             match_array_in_array(@mail.bcc, @bcc_recipients)
+           else
+             true
+           end
+         end
+
+         def multipart_matches?
+           if @multipart
+             (@mail.multipart? == @multipart)
+           else
+             true
+           end
+         end
 
         def normalize_blocks
           if @email_subject_block
