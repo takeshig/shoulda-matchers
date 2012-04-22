@@ -98,18 +98,21 @@ module ModelBuilder
   def build_response(opts = {}, &block)
     action = opts[:action] || 'example'
     partial = opts[:partial] || '_partial'
-    klass = define_controller('Examples')
     block ||= lambda { render :nothing => true }
-    klass.class_eval { layout false; define_method(action, &block) }
+    controller_class = define_controller('Examples') do
+      layout false
+      define_method(action, &block)
+    end
+    controller_class.view_paths = [TMP_VIEW_PATH]
+
     define_routes do
       match 'examples', :to => "examples##{action}"
     end
 
     create_view("examples/#{action}.html.erb", "abc")
     create_view("examples/#{partial}.html.erb", "partial")
-    klass.view_paths = [TMP_VIEW_PATH]
 
-    @controller = klass.new
+    @controller = controller_class.new
     @request    = ActionController::TestRequest.new
     @response   = ActionController::TestResponse.new
 
