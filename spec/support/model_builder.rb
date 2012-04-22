@@ -50,7 +50,7 @@ module ModelBuilder
   end
 
   def define_active_model_class(class_name, options = {}, &block)
-    define_class(class_name, Object) do
+    define_class(class_name) do
       include ActiveModel::Validations
 
       options[:accessors].each do |column|
