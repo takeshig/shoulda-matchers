@@ -34,10 +34,9 @@ describe Shoulda::Matchers::ActiveModel::ValidateUniquenessOfMatcher do
         @matcher = validate_uniqueness_of(:attr)
       end
 
-      it "should still match properly" do
+      it "does not not require a created instance" do
         @model.should @matcher
       end
-
     end
   end
 
