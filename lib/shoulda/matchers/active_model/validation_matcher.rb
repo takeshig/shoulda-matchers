@@ -6,6 +6,7 @@ module Shoulda # :nodoc:
 
         def initialize(attribute)
           @attribute = attribute
+          @context = nil
         end
 
         def negative_failure_message
@@ -17,13 +18,19 @@ module Shoulda # :nodoc:
           false
         end
 
+        def on(context)
+          @context = context
+          self
+        end
+
         private
 
         def allows_value_of(value, message = nil)
           allow = AllowValueMatcher.
             new(value).
             for(@attribute).
-            with_message(message)
+            with_message(message).
+            on(@context)
           if allow.matches?(@subject)
             @negative_failure_message = allow.failure_message
             true
@@ -37,7 +44,8 @@ module Shoulda # :nodoc:
           disallow = AllowValueMatcher.
             new(value).
             for(@attribute).
-            with_message(message)
+            with_message(message).
+            on(@context)
           if disallow.matches?(@subject)
             @failure_message = disallow.negative_failure_message
             false

@@ -30,6 +30,7 @@ module Shoulda # :nodoc:
         def initialize(*values)
           @values_to_match = values
           @options = {}
+          @context = nil
         end
 
         def for(attribute)
@@ -39,6 +40,11 @@ module Shoulda # :nodoc:
 
         def with_message(message)
           @options[:expected_message] = message
+          self
+        end
+
+        def on(context)
+          @context = context
           self
         end
 
@@ -66,7 +72,7 @@ module Shoulda # :nodoc:
         private
 
         def errors_match?
-          if @instance.valid?
+          if @instance.valid?(@context)
             false
           else
             if expected_message
